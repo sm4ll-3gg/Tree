@@ -197,9 +197,6 @@ template <typename  DataType>
 void Tree<DataType>::clear() noexcept
 {
     free_resources(root);
-
-    delete root;
-    root = nullptr;
 }
 
 template <typename DataType>
@@ -382,6 +379,8 @@ void Tree<DataType>::free_resources(Node* node) noexcept
                 node->parent->right = nullptr;
             }
         }
+
+        delete node;
 
         node = nullptr;
     };
