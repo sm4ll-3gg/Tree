@@ -197,6 +197,8 @@ template <typename  DataType>
 void Tree<DataType>::clear() noexcept
 {
     free_resources(root);
+
+    root = nullptr;
 }
 
 template <typename DataType>
@@ -361,8 +363,6 @@ void Tree<DataType>::free_resources(Node* node) noexcept
 {
     auto func = [] (Node* node)
     {
-        node->data = DataType();
-
         /*
          * Если есть указатели на детей, то они
          * обнуляться из детей след. if'ом
@@ -380,6 +380,8 @@ void Tree<DataType>::free_resources(Node* node) noexcept
             }
         }
 
+        node->data = DataType();
+        node->parent = nullptr;
         delete node;
 
         node = nullptr;

@@ -25,8 +25,14 @@ int main()
     t1->push(6);
     t1->print_tree();
 
+    Tree<int>::Node* n = t1->find_place_to_add(10);
+
     t1->clear();
     t1->print_tree();
+
+    delete n;
+
+    std::cout << n->data << std::endl;
 
 
 //    std::cout << "Вывод пустого дерева t:" << std::endl;
