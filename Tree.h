@@ -362,25 +362,31 @@ void Tree<DataType>::print_tree() noexcept
 template <typename DataType>
 void Tree<DataType>::free_resources(Node* node) noexcept
 {
-    if(node->parent != nullptr)
+    auto func = [] (Node* node)
     {
-        if (node->data < node->parent->data)
+        node->data = DataType();
+
+        /*
+         * Если есть указатели на детей, то они
+         * обнуляться из детей след. if'ом
+         */
+
+        if(node->parent != nullptr)
         {
-            node->parent->left = nullptr;
+            if (node->data < node->parent->data)
+            {
+                node->parent->left = nullptr;
+            }
+            else
+            {
+                node->parent->right = nullptr;
+            }
         }
-        else
-        {
-            node->parent->right = nullptr;
-        }
-    }
 
-    node->data = DataType();
+        node = nullptr;
+    };
 
-    if(node->left != nullptr) free_resources(node->left);
-    if(node->right != nullptr) free_resources(node->right);
-
-    delete node->left;
-    delete node->right;
+    _lrc_tree_walk(node,func);
 }
 
 template <typename DataType>
@@ -502,7 +508,7 @@ void Tree<DataType>::_lcr_tree_walk(Node* node, std::function<void (Node*)> func
 }
 
 template <typename DataType>
-void Tree<DataType>::_lrc_tree_walk(Node* node, std::function<void (Node*)> function)
+void Tree<DataType>::_lrc_tree_walk(Node* node, std::function<void (Node*)> function) noexcept
 {
     if(node->left != nullptr)
         _lrc_tree_walk(node->left, function);

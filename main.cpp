@@ -130,6 +130,9 @@ int main()
     t2.clear();
 
     Tree<int>::Node* n = t1->find_place_to_add(10);
+
+    t1->clear();
+
     std::cout << n->data << std::endl;
 
 
