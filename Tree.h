@@ -6,73 +6,68 @@
 #define TREE_TREE_H
 
 #include "TException.h"
+#include "Node.h"
 
 #include <iostream>
 #include <functional>
+#include <queue>
+#include <forward_list>
 
 template <typename DataType>
 class Tree
 {
-public:
-    struct Node
-    {
-        DataType data;
+    Node<DataType>* root;
 
-        Node* right;
-        Node* left;
-
-        Node* parent;
-    };
-
-    Node* root;
-
-    void                    free_resources(Node*) noexcept;
-
-    Node*                   _search(Node*, const DataType&) noexcept;
-
-    void                    transplant(Node*,Node*) noexcept;
-
-    Node*                   minimum_node(Node*) noexcept; // В поддереве
-    Node*                   maximum_node(Node*) noexcept; // -----------
-
-    Node*                   find_place_to_add(const DataType&) noexcept;
-
-    void                    _clr_tree_walk(Node*, std::function<void (Node*)>) noexcept;
-    void                    _lcr_tree_walk(Node*, std::function<void (Node*)>) noexcept;
-    void                    _lrc_tree_walk(Node*, std::function<void (Node*)>) noexcept;
-
-    int                     _depth(Node*, const int&) noexcept;
-
-    void                    _print_tree(Node*, int) noexcept;
 public:
     Tree() noexcept;
     Tree(const DataType&) throw( TException );
-    Tree(Node*) noexcept ; // Создание поддерева с заданного узла
+    Tree(Node<DataType>*) noexcept ; // Создание поддерева с заданного узла
     Tree(const Tree<DataType>&) noexcept ;
     ~Tree() noexcept;
 
-    void                    push(const DataType&) throw( TException );
-    void                    clear() noexcept;
+    void                                    push(const DataType&) throw( TException );
+    void                                    clear() noexcept;
 
-    void                    remove(const DataType&) noexcept;
-    void                    cut(const DataType&) noexcept;
+    void                                    remove(const DataType&) noexcept;
+    void                                    cut(const DataType&) noexcept;
 
-    Node*                   search(const DataType&) throw( TException );
+    Node<DataType>*                         search_first(const DataType&) throw( TException );
+    std::forward_list< Node<DataType>* >    search_all(const DataType&) throw( TException );
 
-    const DataType&         min() noexcept;
-    const DataType&         max() noexcept;
+    const DataType&                         min() noexcept;
+    const DataType&                         max() noexcept;
 
-    void                    add_subtree(const Tree<DataType>&) noexcept;
-    Tree<DataType>          get_subtree(const DataType&) noexcept;
+    void                                    add_subtree(const Tree<DataType>&) noexcept;
+    Tree<DataType>                          get_subtree(const DataType&) noexcept;
 
-    void                    clr_tree_walk(std::function<void (Node*)>) noexcept;
-    void                    lcr_tree_walk(std::function<void (Node*)>) noexcept;
+    void                                    clr_tree_traversial(std::function<void (Node<DataType>*)>) noexcept;
+    void                                    lcr_tree_traversial(std::function<void (Node<DataType>*)>) noexcept;
+    void                                    lrc_tree_traversial(std::function<void (Node<DataType>*)>) noexcept;
+    void                                    breadth_first_traversal(std::function<void (Node<DataType>*)>) noexcept;
 
-    int                     depth() noexcept; // Криво считает глубину, после добавления поддерева
+    int                                     depth() noexcept;
 
-    const Tree<DataType>&   operator = (const Tree<DataType>&) noexcept ;
+    const Tree<DataType>&                   operator = (const Tree<DataType>&) noexcept ;
 
-    void                    print_tree() noexcept;
+    void                                    print_tree() noexcept;
+
+private:
+    void                                    free_resources(Node<DataType>*) noexcept;
+
+    void                                    transplant(Node<DataType>*,Node<DataType>*) noexcept;
+
+    Node<DataType>*                         minimum_node(Node<DataType>*) noexcept; // В поддереве
+    Node<DataType>*                         maximum_node(Node<DataType>*) noexcept; // -----------
+
+    Node<DataType>*                         find_place_to_add(const DataType&) noexcept;
+
+    void                                    _clr_tree_traversial(Node<DataType>*, std::function<void (Node<DataType>*)>) noexcept;
+    void                                    _lcr_tree_traversial(Node<DataType>*, std::function<void (Node<DataType>*)>) noexcept;
+    void                                    _lrc_tree_traversial(Node<DataType>*, std::function<void (Node<DataType>*)>) noexcept;
+
+    int                                     _depth(Node<DataType>*) noexcept;
+
+    void                                    _print_tree(Node<DataType>*, int) noexcept;
 };
 
 template <typename DataType>
@@ -86,7 +81,7 @@ Tree<DataType>::Tree(const DataType& data) throw( TException )
 {
     try
     {
-        root = new Node;
+        root = new Node<DataType>;
 
         root->data = data;
 
@@ -102,16 +97,16 @@ Tree<DataType>::Tree(const DataType& data) throw( TException )
 }
 
 template <typename DataType>
-Tree<DataType>::Tree(Node* new_root) noexcept
+Tree<DataType>::Tree(Node<DataType>* new_root) noexcept
 {
     root = nullptr;
 
-    auto func = [this] (Node* node)
+    auto func = [this] (Node<DataType>* node)
     {
         push(node->data);
     };
 
-    _clr_tree_walk(new_root, func);
+    _clr_tree_traversial(new_root, func);
 }
 
 template <typename DataType>
@@ -119,12 +114,12 @@ Tree<DataType>::Tree(const Tree<DataType>& other) noexcept
 {
     root = nullptr;
 
-    auto func = [this] (Node* node)
+    auto func = [this] (Node<DataType>* node)
     {
         push(node->data);
     };
 
-    _clr_tree_walk(other.root,func);
+    _clr_tree_traversial(other.root,func);
 }
 
 template <typename DataType>
@@ -141,15 +136,15 @@ void Tree<DataType>::push(const DataType& data) throw( TException )
 {
     try
     {
-        Node* node = new Node; // вставляемый узел
+        Node<DataType>* node = new Node<DataType>; // вставляемый узел
 
         node->data = data;
         node->left = nullptr;
         node->right = nullptr;
         node->parent = nullptr;
 
-        Node* temp = nullptr;
-        Node* y = root;
+        Node<DataType>* temp = nullptr;
+        Node<DataType>* y = root;
 
         while(y != nullptr)
         {
@@ -204,44 +199,53 @@ void Tree<DataType>::clear() noexcept
 template <typename DataType>
 void Tree<DataType>::remove(const DataType& data) noexcept
 {
-    Node* node = search(data);
+    std::forward_list< Node<DataType>* > nodes = search_all(data);
 
-    free_resources(node);
+    for(auto it = nodes.begin(); it != nodes.end(); ++it)
+    {
+        free_resources(*it);
+    }
 }
 
 template <typename DataType>
 void Tree<DataType>::cut(const DataType& data) noexcept
 {
-    Node* node = search(data);
+    std::forward_list< Node<DataType>* > nodes = search_all(data);
 
-    if(node->left == nullptr)
+    for(auto it = nodes.begin(); it != nodes.end(); ++it)
     {
-        transplant(node,node->right);
-    }
-    else
-    if(node->right == nullptr)
-    {
-        transplant(node,node->left);
-    }
-    else
-    {
-        Node* temp = minimum_node(node->right);
-        if(temp->parent != node)
+        Node<DataType>* node = *it;
+
+        if (node->left == nullptr)
         {
-            transplant(temp,temp->right);
-            temp->right = node->right;
-            temp->right->parent = temp;
+            transplant(node, node->right);
         }
-        transplant(node,temp);
-        temp->left = node->left;
-        temp->left->parent = temp;
+        else if (node->right == nullptr)
+        {
+            transplant(node, node->left);
+        }
+        else
+        {
+            Node<DataType> *temp = minimum_node(node->right);
+            if (temp->parent != node)
+            {
+                transplant(temp, temp->right);
+                temp->right = node->right;
+                temp->right->parent = temp;
+            }
+            transplant(node, temp);
+            temp->left = node->left;
+            temp->left->parent = temp;
+        }
+
+        node = nullptr;
     }
 }
 
 template <typename DataType>
-typename Tree<DataType>::Node* Tree<DataType>::search(const DataType& data) throw( TException )
+Node<DataType>* Tree<DataType>::search_first(const DataType& data) throw( TException )
 {
-    Node* node = root;
+    Node<DataType>* node = root;
 
     while(node != nullptr)
     {
@@ -263,6 +267,24 @@ typename Tree<DataType>::Node* Tree<DataType>::search(const DataType& data) thro
 }
 
 template <typename DataType>
+std::forward_list< Node<DataType>* > Tree<DataType>::search_all(const DataType& data) throw( TException )
+{
+    std::forward_list< Node<DataType>* > nodes;
+
+    auto _search_all = [&nodes, data] (Node<DataType>* node)
+    {
+        if(node->data == data) nodes.push_front(node);
+    };
+
+    _clr_tree_traversial(root, _search_all);
+
+    if(nodes.empty())
+        throw TException("Узла с таким значением в данном дереве нет!");
+    else
+        return nodes;
+}
+
+template <typename DataType>
 const DataType& Tree<DataType>::min() noexcept
 {
     return minimum_node(root)->data;
@@ -277,7 +299,7 @@ const DataType& Tree<DataType>::max() noexcept
 template <typename DataType>
 void Tree<DataType>::add_subtree(const Tree<DataType>& subtree) noexcept
 {
-    Node* temp = find_place_to_add(subtree.root->data);
+    Node<DataType>* temp = find_place_to_add(subtree.root->data);
 
     Tree<DataType>* temp_tree = new Tree<DataType>;
     *temp_tree = subtree;
@@ -299,27 +321,55 @@ void Tree<DataType>::add_subtree(const Tree<DataType>& subtree) noexcept
 template <typename DataType>
 Tree<DataType> Tree<DataType>::get_subtree(const DataType& data) noexcept
 {
-    Node* node = search(data);
+    Node<DataType>* node = search_first(data);
 
     return Tree<DataType>(node);
 }
 
 template <typename DataType>
-void Tree<DataType>::clr_tree_walk(std::function<void(Node*)> function) noexcept
+void Tree<DataType>::clr_tree_traversial(std::function<void(Node<DataType>*)> function) noexcept
 {
-    _clr_tree_walk(root, function);
+    _clr_tree_traversial(root, function);
 }
 
 template <typename DataType>
-void Tree<DataType>::lcr_tree_walk(std::function<void(Node*)> function) noexcept
+void Tree<DataType>::lcr_tree_traversial(std::function<void(Node<DataType>*)> function) noexcept
 {
-    _lcr_tree_walk(root, function);
+    _lcr_tree_traversial(root, function);
+}
+
+template <typename DataType>
+void Tree<DataType>::lrc_tree_traversial(std::function<void(Node<DataType> *)> function) noexcept
+{
+    _lrc_tree_traversial(root, function);
+}
+
+template <typename DataType>
+void Tree<DataType>::breadth_first_traversal(std::function<void(Node<DataType> *)> function) noexcept
+{
+    std::queue<Node<DataType>*> queue;
+    queue.push(root);
+
+    while(!queue.empty())
+    {
+        Node<DataType>* temp = queue.front();
+        queue.pop();
+
+        if(temp->left != nullptr)
+            queue.push(temp->left);
+        if(temp->right != nullptr)
+            queue.push(temp->right);
+
+        function(temp);
+
+        temp = nullptr;
+    }
 }
 
 template <typename DataType>
 int Tree<DataType>::depth() noexcept
 {
-    return _depth(root,1);
+    return _depth(root);
 }
 
 template <typename DataType>
@@ -330,12 +380,12 @@ const Tree<DataType>& Tree<DataType>::operator=(const Tree<DataType>& other) noe
         free_resources(root);
     }
 
-    auto func = [this](Node *node)
+    auto func = [this](Node<DataType>* node)
     {
         push(node->data);
     };
 
-    _clr_tree_walk(other.root, func);
+    _clr_tree_traversial(other.root, func);
 
     return *this;
 }
@@ -359,9 +409,9 @@ void Tree<DataType>::print_tree() noexcept
 
 
 template <typename DataType>
-void Tree<DataType>::free_resources(Node* node) noexcept
+void Tree<DataType>::free_resources(Node<DataType>* node) noexcept
 {
-    auto func = [] (Node* node)
+    auto func = [] (Node<DataType>* node)
     {
         /*
          * Если есть указатели на детей, то они
@@ -387,32 +437,11 @@ void Tree<DataType>::free_resources(Node* node) noexcept
         node = nullptr;
     };
 
-    _lrc_tree_walk(node,func);
-}
-
-template <typename DataType>
-typename Tree<DataType>::Node* Tree<DataType>::_search(Node* node, const DataType& data) noexcept
-{
-
-//    if(node->data == data)
-//    {
-//        return node;
-//    }
-//    else
-//    {
-//        if(data < node->data && node->left != nullptr)
-//        {
-//            _search(node->left, data);
-//        }
-//        else if(node->right != nullptr)
-//        {
-//            _search(node->left, data);
-//        }
-//    }
+    _lrc_tree_traversial(node,func);
 }
 
 template<typename DataType>
-void Tree<DataType>::transplant(Node* u,Node* v) noexcept
+void Tree<DataType>::transplant(Node<DataType>* u,Node<DataType>* v) noexcept
 {
     if(u->parent == nullptr)
     {
@@ -435,9 +464,9 @@ void Tree<DataType>::transplant(Node* u,Node* v) noexcept
 }
 
 template <typename DataType>
-typename Tree<DataType>::Node* Tree<DataType>::minimum_node(Node* node) noexcept
+Node<DataType>* Tree<DataType>::minimum_node(Node<DataType>* node) noexcept
 {
-    Node* temp = node;
+    Node<DataType>* temp = node;
 
     while(temp->left != nullptr)
     {
@@ -448,9 +477,9 @@ typename Tree<DataType>::Node* Tree<DataType>::minimum_node(Node* node) noexcept
 }
 
 template <typename DataType>
-typename Tree<DataType>::Node* Tree<DataType>::maximum_node(Node* node) noexcept
+Node<DataType>* Tree<DataType>::maximum_node(Node<DataType>* node) noexcept
 {
-    Node* temp = node;
+    Node<DataType>* temp = node;
 
     while(temp->right != nullptr)
     {
@@ -461,9 +490,9 @@ typename Tree<DataType>::Node* Tree<DataType>::maximum_node(Node* node) noexcept
 }
 
 template <typename DataType>
-typename Tree<DataType>::Node* Tree<DataType>::find_place_to_add(const DataType& data) noexcept
+Node<DataType>* Tree<DataType>::find_place_to_add(const DataType& data) noexcept
 {
-    Node* node = root;
+    Node<DataType>* node = root;
 
     while(node->left != nullptr || node->right != nullptr)
     {
@@ -485,66 +514,64 @@ typename Tree<DataType>::Node* Tree<DataType>::find_place_to_add(const DataType&
 }
 
 template <typename DataType>
-void Tree<DataType>::_clr_tree_walk(Node* node, std::function<void (Node*)> function) noexcept
+void Tree<DataType>::_clr_tree_traversial(Node<DataType>* node, std::function<void (Node<DataType>*)> function) noexcept
 {
     function(node);
 
     if(node->left != nullptr)
-        _clr_tree_walk(node->left, function);
+        _clr_tree_traversial(node->left, function);
 
     if(node->right != nullptr)
-        _clr_tree_walk(node->right, function);
+        _clr_tree_traversial(node->right, function);
 }
 
 template <typename DataType>
-void Tree<DataType>::_lcr_tree_walk(Node* node, std::function<void (Node*)> function) noexcept
+void Tree<DataType>::_lcr_tree_traversial(Node<DataType>* node, std::function<void (Node<DataType>*)> function) noexcept
 {
     if(node->left != nullptr)
-        _lcr_tree_walk(node->left, function);
+        _lcr_tree_traversial(node->left, function);
 
     function(node);
 
     if(node->right != nullptr)
-        _lcr_tree_walk(node->right, function);
+        _lcr_tree_traversial(node->right, function);
 }
 
 template <typename DataType>
-void Tree<DataType>::_lrc_tree_walk(Node* node, std::function<void (Node*)> function) noexcept
+void Tree<DataType>::_lrc_tree_traversial(Node<DataType>* node, std::function<void (Node<DataType>*)> function) noexcept
 {
     if(node->left != nullptr)
-        _lrc_tree_walk(node->left, function);
+        _lrc_tree_traversial(node->left, function);
 
     if(node->right != nullptr)
-        _lrc_tree_walk(node->right, function);
+        _lrc_tree_traversial(node->right, function);
 
     function(node);
 }
 
 template <typename DataType>
-int Tree<DataType>::_depth(Node* node, const int& level) noexcept
+int Tree<DataType>::_depth(Node<DataType>* node) noexcept
 {
+    if(node == nullptr) return 0;
+
     int left = 0;
     int right = 0;
 
     if(node->left != nullptr)
-        left = _depth(node->left, level+1);
-    if(node->right != nullptr)
-        right = _depth(node->right, level+1);
+        left = _depth(node->left);
+    else left = -1;
 
-    if(left > level)
-    {
-        return left;
-    }
-    else if(right > level)
-    {
-        return right;
-    }
-    else
-        return level;
+    if(node->right != nullptr)
+        right = _depth(node->right);
+    else right = -1;
+
+    int max = left > right ? left : right;
+
+    return max+1;
 }
 
 template <typename DataType>
-void Tree<DataType>::_print_tree(Node* node, int level) noexcept
+void Tree<DataType>::_print_tree(Node<DataType>* node, int level) noexcept
 {
     for(int i = 0; i < level; i++)
     {
